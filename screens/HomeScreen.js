@@ -2,7 +2,7 @@ import { ScrollView, Text, View } from 'react-native';
 import { Card } from 'react-native-elements';
 import { useSelector } from 'react-redux';
 import { baseUrl } from '../shared/baseUrl';
-import Loading from './components/LoadingComponent';
+import Loading from '../components/LoadingComponent';
 
 const FeaturedItem = (props) => {
     const { item } = props;
