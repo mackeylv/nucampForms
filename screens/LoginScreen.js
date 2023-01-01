@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView, Image } from 'react-native';
 import { CheckBox, Input, Button, Icon } from 'react-native-elements';
 import * as SecureStore from 'expo-secure-store';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import * as ImagePicker from 'expo-image-picker';
+import { baseUrl } from '../shared/baseUrl';
+import logo from '../assets/images/logo.png';
+import * as ImageManipulator from 'expo-image-manipulator';
 
-const LoginTab = () => {
+const LoginTab = ({ navigation }) => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [remember, setRemember] = useState(false);
@@ -101,13 +105,13 @@ const LoginTab = () => {
 };
 
 const RegisterTab = () => {
-    //state variables
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
     const [remember, setRemember] = useState(false);
+    const [imageUrl, setImageUrl] = useState(baseUrl + 'images/logo.png');
 
     const handleRegister = () => {
         const userInfo = {
@@ -118,7 +122,6 @@ const RegisterTab = () => {
             email,
             remember
         };
-        //turns the object into string making it a bit easier to read in the terminal
         console.log(JSON.stringify(userInfo));
         if (remember) {
             SecureStore.setItemAsync(
@@ -135,9 +138,62 @@ const RegisterTab = () => {
         }
     };
 
-    return ( 
-    <ScrollView>
-        <View style={styles.container}>
+    const getImageFromCamera = async () => {
+        const cameraPermission =
+            await ImagePicker.requestCameraPermissionsAsync();
+
+        if (cameraPermission.status === 'granted') {
+            const capturedImage = await ImagePicker.launchCameraAsync({
+                allowsEditing: true,
+                aspect: [1, 1]
+            });
+            if (!capturedImage.canceled) {
+                console.log(capturedImage);
+                //setImageUrl(capturedImage.uri);
+                //Call the processImage function: add a call to the processImage function, passing it the capturedImage.uri as its sole argument.
+                processImage(capturedImage.uri);
+            }
+        }
+    };
+//Task 1: Resize a photo and convert it to PNG
+//Create a new image: Inside the async function, set up an await for the ImageManipulator.manipulateAsync method, and assign its return value to a constant named processedImage. 
+    const processImage = async (imgUri) => {
+        const processedImage = 
+            await ImageManipulator.manipulateAsync(
+                imgUri, [{ resize: { width:400 } }], { format: ImageManipulator.SaveFormat.PNG }
+            );
+            console.log(processedImage);
+            setImageUrl({imageUrl:processImage.uri})
+    };
+
+    const getImageFromGallery = async () => {
+        const mediaLibraryPermissions =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+        if (mediaLibraryPermissions.status === 'granted') {
+            const capturedImage = await ImagePicker.launchImageLibraryAsync ({
+                allowsEditing: true,
+                aspect: [1,1]
+            });
+            if (!capturedImage.canceled) {
+                console.log(capturedImage);
+                processImage(capturedImage.uri);
+            }
+        }
+    };
+
+    return (
+        <ScrollView>
+            <View style={styles.container}>
+                <View style={styles.imageContainer}>
+                    <Image
+                        source={{ uri: imageUrl }}
+                        loadingIndicatorSource={logo}
+                        style={styles.image}
+                    />
+                    <Button title='Camera' onPress={getImageFromCamera} />
+                    <Button title='Gallery' onPress={getImageFromGallery} />
+                </View>
                 <Input
                     placeholder='Username'
                     leftIcon={{ type: 'font-awesome', name: 'user-o' }}
@@ -202,7 +258,7 @@ const RegisterTab = () => {
                     />
                 </View>
             </View>
-    </ScrollView>
+        </ScrollView>
     );
 };
 
@@ -263,7 +319,7 @@ const styles = StyleSheet.create({
     },
     formInput: {
         padding: 8,
-        height:60
+        height: 60
     },
     formCheckbox: {
         margin: 8,
@@ -271,7 +327,19 @@ const styles = StyleSheet.create({
     },
     formButton: {
         margin: 20,
-        marginRight:40
+        marginRight: 40,
+        marginLeft: 40
+    },
+    imageContainer: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-evenly',
+        margin: 10
+    },
+    image: {
+        width: 60,
+        height: 60
     }
 });
 
